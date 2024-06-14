@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import boto3
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 import os
@@ -20,6 +21,14 @@ s3_client = boto3.client(
     endpoint_url=os.getenv("DIGITAL_OCEAN_ORIGIN"),  # Reemplaza con tu endpoint
     aws_access_key_id=os.getenv("DIGITAL_OCEAN_ACCESS_KEY"),
     aws_secret_access_key=os.getenv("DIGITAL_OCEAN_SECRET_KEY")
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Reemplaza con el origen de tu frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
