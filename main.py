@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 import boto3
@@ -6,6 +8,10 @@ import os
 from dotenv import load_dotenv
 
 app = FastAPI()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 load_dotenv()
 s3_client = boto3.client(
@@ -27,7 +33,7 @@ async def generate_presigned_url(bucket_name: str = Query(...), key: str = Query
                 'Key': key,
                 'ACL': 'public-read'
             },
-            ExpiresIn=60
+            ExpiresIn=120
         )
         return JSONResponse(content={"url": url})
     except NoCredentialsError:
