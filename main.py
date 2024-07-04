@@ -26,7 +26,7 @@ s3_client = session.client(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Reemplaza con el origen de tu frontend
+    allow_origins=["http://localhost:5173", "127.0.0.1:5173", "syspdfsur.vercel.app"],  # Reemplaza con el origen de tu frontend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -56,15 +56,17 @@ async def upload_image(file: UploadFile = File(...)):
         # return {"imageUrl": file_url}
         return JSONResponse(content={"file_url": file_url})
 
+    except NoCredentialsError as e:
+        logger.error(f"Credentials not provided or incorrect: {e}")
+        raise HTTPException(status_code=401, detail="Could not authenticate with the provided credentials")
+
+    except PartialCredentialsError as e:
+        logger.error(f"Partial credentials provided: {e}")
+        raise HTTPException(status_code=500, detail="Incomplete credentials")
+
     except Exception as e:
         logger.error(f"Error uploading file: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}")
-    except NoCredentialsError:
-        logger.error("Credentials not provided or incorrect.")
-        raise HTTPException(status_code=401, detail="Could not authenticate with the provided credentials")
-    except PartialCredentialsError:
-        logger.error(f"Credentials not provided or incorrect.")
-        raise HTTPException(status_code=500, detail="CredentialsIncomplete")
 
 
 @app.post("/delete/")
@@ -94,9 +96,9 @@ async def generate_presigned_url(bucket_name: str = Query(...), key: str = Query
         )
         return JSONResponse(content={"url": url})
     except NoCredentialsError:
-        raise HTTPException(status_code=500, detail="Credenciales no encontradas")
+        raise HTTPException(status_code=500, detail="Credentials not found")
     except PartialCredentialsError:
-        raise HTTPException(status_code=500, detail="Credenciales incompletas")
+        raise HTTPException(status_code=500, detail="Credentials incomplete")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
