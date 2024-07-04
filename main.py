@@ -14,7 +14,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-s3_client = boto3.client(
+
+session = boto3.session.Session()
+s3_client = session.client(
     's3',
     region_name='nyc3',  # Reemplaza con tu región
     endpoint_url=os.getenv("DIGITAL_OCEAN_ORIGIN"),  # Reemplaza con tu endpoint
@@ -34,19 +36,35 @@ app.add_middleware(
 @app.post("/upload/")
 async def upload_image(file: UploadFile = File(...)):
     try:
+        if file is None:
+            raise HTTPException(status_code=400, detail="No file uploaded")
+
         file_bytes = await file.read()
+        if file_bytes is None:
+            raise HTTPException(status_code=400, detail="File content is None")
+
         filename = file.filename
         s3_client.put_object(
             Bucket=os.getenv("DIGITAL_OCEAN_BUCKET"),
             Key=filename,
             Body=file_bytes,
-            ACL='public-read'
+            ACL='public-read',
+            ContentType=file.content_type,
         )
         file_url = f"{os.getenv('DIGITAL_OCEAN_ORIGIN')}/{os.getenv('DIGITAL_OCEAN_BUCKET')}/{filename}"
-        return {"imageUrl": file_url}
+        logger.info(f"File URL: {file_url}")
+        # return {"imageUrl": file_url}
+        return JSONResponse(content={"file_url": file_url})
+
     except Exception as e:
         logger.error(f"Error uploading file: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error uploading file")
+        raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}")
+    except NoCredentialsError:
+        logger.error("Credentials not provided or incorrect.")
+        raise HTTPException(status_code=401, detail="Could not authenticate with the provided credentials")
+    except PartialCredentialsError:
+        logger.error(f"Credentials not provided or incorrect.")
+        raise HTTPException(status_code=500, detail="CredentialsIncomplete")
 
 
 @app.post("/delete/")
