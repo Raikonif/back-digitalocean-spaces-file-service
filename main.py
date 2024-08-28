@@ -26,7 +26,7 @@ s3_client = session.client(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "127.0.0.1:5173", "syspdfsur.vercel.app"],  # Reemplaza con el origen de tu frontend
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://syspdfsur.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
